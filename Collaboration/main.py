@@ -28,60 +28,17 @@ corrupted_files = ['12cesar--frontend-meang-online-shop1--backend-meang-online-s
 
 
 """ *********************************************** Mono Repository ************************************************ """
-# for each_file in os.listdir(address_folder_mono):
-#     count += 1
-#     print(total_count - count)
-#
-#     if '.json' in each_file:
-#         commit_count = 0
-#         # print(each_file)
-#         with open(address_folder_mono + '/' + each_file, 'r', encoding="utf8") as file:
-#             file_content = json.load(file)
-#
-#             if file_content['Productivity'] == 'Low' and len(file_content['contributors']) > 3:
-#
-#                 index += 1
-#
-#                 if file_content['Average collaboration value'] <= 50:
-#                     less_than_50 += 1
-#                 if 50 < file_content['Average collaboration value'] <= 100:
-#                     between_50_100 += 1
-#                 if 100 < file_content['Average collaboration value'] < 200:
-#                     between_100_200 += 1
-#                 if file_content['Average collaboration value'] > 200:
-#                     more_than_200 += 1
-#
-#                 dict1 = {'Repo Type': 'Mono Repository',
-#                          'Collaboration ratio': file_content['Average collaboration value']}
-#
-#                 dict_list.append(dict1)
-#                 dict_list_mono.append(dict1)
-
-""" *********************************************** Multi Repository (Front) ************************************************ """
-total_count = len(os.listdir(address_folder_multi))
-
-for each_file in os.listdir(address_folder_multi):
+for each_file in os.listdir(address_folder_mono):
     count += 1
     print(total_count - count)
 
     if '.json' in each_file:
         commit_count = 0
         # print(each_file)
-        with open(address_folder_multi + '/' + each_file, 'r', encoding="utf8") as file:
+        with open(address_folder_mono + '/' + each_file, 'r', encoding="utf8") as file:
             file_content = json.load(file)
 
-            developers = []
-
-            for each_dev in file_content['Front Repositories']['contributors']:
-                developers.append(each_dev['login'])
-
-            for each_dev in file_content['Back Repositories']['contributors']:
-                developers.append(each_dev['login'])
-
-            unique_developers = list(set(developers))
-
-            if len(unique_developers) > 3 and each_file not in corrupted_files and \
-                    (file_content['Front Repositories']['Productivity'] == 'Low' and file_content['Back Repositories']['Productivity'] == 'Low'):
+            if file_content['Productivity'] != 'None' and len(file_content['contributors']) > 3:
 
                 index += 1
 
@@ -94,11 +51,53 @@ for each_file in os.listdir(address_folder_multi):
                 if file_content['Average collaboration value'] > 200:
                     more_than_200 += 1
 
-                dict1 = {'Repo Type': 'Multi Repository',
+                dict1 = {'Repo Type': 'Mono Repository',
                          'Collaboration ratio': file_content['Average collaboration value']}
 
                 dict_list.append(dict1)
-                dict_list_multi.append(dict1)
+                dict_list_mono.append(dict1)
+
+""" *********************************************** Multi Repository *********************************************** """
+# total_count = len(os.listdir(address_folder_multi))
+#
+# for each_file in os.listdir(address_folder_multi):
+#     count += 1
+#     print(total_count - count)
+#
+#     if '.json' in each_file:
+#         commit_count = 0
+#         # print(each_file)
+#         with open(address_folder_multi + '/' + each_file, 'r', encoding="utf8") as file:
+#             file_content = json.load(file)
+#
+#             developers = []
+#
+#             for each_dev in file_content['Front Repositories']['contributors']:
+#                 developers.append(each_dev['login'])
+#
+#             for each_dev in file_content['Back Repositories']['contributors']:
+#                 developers.append(each_dev['login'])
+#
+#             unique_developers = list(set(developers))
+#
+#             if len(unique_developers) > 2 and each_file not in corrupted_files:
+#
+#                 index += 1
+#
+#                 if file_content['Average collaboration value'] <= 50:
+#                     less_than_50 += 1
+#                 if 50 < file_content['Average collaboration value'] <= 100:
+#                     between_50_100 += 1
+#                 if 100 < file_content['Average collaboration value'] < 200:
+#                     between_100_200 += 1
+#                 if file_content['Average collaboration value'] > 200:
+#                     more_than_200 += 1
+#
+#                 dict1 = {'Repo Type': 'Multi Repository',
+#                          'Collaboration ratio': file_content['Average collaboration value']}
+#
+#                 dict_list.append(dict1)
+#                 dict_list_multi.append(dict1)
 
 
 """ ***************************************************************************************************************** """
@@ -128,28 +127,28 @@ for each_file in os.listdir(address_folder_multi):
 print("less_than_50 = %d; between_50_100 = %d; between_100_200 = %d; more_than_200 = %d" %(less_than_50, between_50_100, between_100_200, more_than_200))
 
 
+# Create x-axis values for both datasets
+data = {'Less than 50': less_than_50, 'Between 50 and 100': between_50_100,
+        'Between 100 and 200': between_100_200, 'more than 200': more_than_200}
 
+print(data)
 
-# # Create x-axis values for both datasets
-# data = {'Less than 50': less_than_50, 'Between 50 and 100': between_50_100,
-#         'Between 100 and 200': between_100_200, 'more than 200': more_than_200}
-#
-# # Create labels and sizes for the pie chart
-# labels = data.keys()
-# sizes = data.values()
-#
-# # Define colors for the pie chart
-# colors = ['blue', 'red', 'yellow', 'green']  # You can customize colors if needed
-#
-# # Create the pie chart
-# plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=140)
-#
-# # Set title
-# # plt.title('Distribution of Data')
-#
-# # Show percentage values on top of the pie slices
-# plt.gca().set_aspect('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-#
-# # Show the pie chart
-# plt.axis('equal')
-# plt.show()
+# Create labels and sizes for the pie chart
+labels = data.keys()
+sizes = data.values()
+
+# Define colors for the pie chart
+colors = ['blue', 'red', 'yellow', 'green']  # You can customize colors if needed
+
+# Create the pie chart
+plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=140)
+
+# Set title
+# plt.title('Distribution of Data')
+
+# Show percentage values on top of the pie slices
+plt.gca().set_aspect('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+
+# Show the pie chart
+plt.axis('equal')
+plt.show()

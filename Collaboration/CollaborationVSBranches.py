@@ -1,8 +1,9 @@
 import os
 import json
 import pandas as pd
-from collections import Counter
+from scipy.stats import pearsonr
 import matplotlib.pyplot as plt
+import numpy as np
 
 address_folder_multi = "E://Final Database(Collaboration)/Multi Repository"
 address_folder_mono = "E://Final Database(Collaboration)/Mono Repository"
@@ -38,12 +39,14 @@ for each_file in os.listdir(address_folder_mono):
         with open(address_folder_mono + '/' + each_file, 'r', encoding="utf8") as file:
             file_content = json.load(file)
 
-            if file_content['Productivity'] == 'Low' and len(file_content['contributors']) > 3:
+            if len(file_content['contributors']) > 2 and  0 < len(file_content['branches']) < 300 and \
+                    file_content['Average collaboration value'] < 400:
 
                 index += 1
 
                 dict1 = {'Branch count': len(file_content['branches']),
-                         'Collaboration ratio': file_content['Average collaboration value']}
+                         'Collaboration ratio': file_content['Average collaboration value'],
+                         'Productivity': file_content['Productivity']}
 
                 dict_list.append(dict1)
                 dict_list_mono.append(dict1)
@@ -61,7 +64,19 @@ for each_file in os.listdir(address_folder_mono):
 #         with open(address_folder_multi + '/' + each_file, 'r', encoding="utf8") as file:
 #             file_content = json.load(file)
 #
+#             branches = []
 #             developers = []
+#
+#             front_productivity = file_content['Front Repositories']['Productivity']
+#             back_productivity = file_content['Front Repositories']['Productivity']
+#
+#             for each_dev in file_content['Front Repositories']['branches']:
+#                 if 'depend' not in each_dev['name']:
+#                     branches.append(each_dev['name'])
+#
+#             for each_dev in file_content['Back Repositories']['branches']:
+#                 if 'depend' not in each_dev['name']:
+#                     branches.append(each_dev['name'])
 #
 #             for each_dev in file_content['Front Repositories']['contributors']:
 #                 developers.append(each_dev['login'])
@@ -69,43 +84,143 @@ for each_file in os.listdir(address_folder_mono):
 #             for each_dev in file_content['Back Repositories']['contributors']:
 #                 developers.append(each_dev['login'])
 #
+#             branches = list(set(branches))
 #             unique_developers = list(set(developers))
 #
-#             if len(unique_developers) > 3 and each_file not in corrupted_files and \
-#                     (file_content['Front Repositories']['Productivity'] == 'Low' and file_content['Back Repositories']['Productivity'] == 'Low'):
+#             if front_productivity == 'High' or back_productivity == 'High':
+#                 productivity = 'High'
 #
-#                 index += 1
+#             elif (front_productivity != 'High' and back_productivity != 'High') and (
+#                     front_productivity == 'Low' or back_productivity == 'Low'):
+#                 productivity = 'Low'
+#             else:
+#                 productivity = 'None'
 #
-#                 if file_content['Average collaboration value'] <= 50:
-#                     less_than_50 += 1
-#                 if 50 < file_content['Average collaboration value'] <= 100:
-#                     between_50_100 += 1
-#                 if 100 < file_content['Average collaboration value'] < 200:
-#                     between_100_200 += 1
-#                 if file_content['Average collaboration value'] > 200:
-#                     more_than_200 += 1
-#
-#                 dict1 = {'Repo Type': 'Multi Repository',
-#                          'Collaboration ratio': file_content['Average collaboration value']}
+#             if len(branches) < 125 and len(unique_developers) > 1 and file_content['Average collaboration value'] < 500:
+#                 dict1 = {'Branch count': len(branches),
+#                          'Collaboration ratio': file_content['Average collaboration value'],
+#                          'Productivity': productivity}
 #
 #                 dict_list.append(dict1)
 #                 dict_list_multi.append(dict1)
 
 
-""" **************************************************************************************************************** """
-dict_list_mono = sorted(dict1, key=lambda x: x['Branch count'])
+""" ************************************ Create Scatter Plot with correlation line ********************************* """
+data = dict_list_mono
 
-x = [entry['Branch count'] for entry in dict_list_mono]
-y = [entry['Collaboration ratio'] for entry in dict_list_mono]
+data = sorted(data, key=lambda x: x['Branch count'])
 
-# Create a line chart
-plt.plot(x, y, marker='', linestyle='-')
+x = [entry['Branch count'] for entry in data]
+y = [entry['Collaboration ratio'] for entry in data]
+
+# Extracting data for 'Branch Count' and 'Collaboration Ratio'
+branch_count = [entry['Branch count'] for entry in data]
+collaboration_ratio = [entry['Collaboration ratio'] for entry in data]
+
+# Separate the data into different categories
+low_productivity_data = [entry for entry in data if entry['Productivity'] == "Low"]
+high_productivity_data = [entry for entry in data if entry['Productivity'] == "High"]
+none_productivity_data = [entry for entry in data if entry['Productivity'] == "None"]
+
+# Calculate the correlation coefficient
+correlation_coefficient, _ = pearsonr(branch_count, collaboration_ratio)
+
+# Calculate correlation coefficients for each category
+correlation_coefficient_low, _ = pearsonr(
+    [entry['Branch count'] for entry in low_productivity_data],
+    [entry['Collaboration ratio'] for entry in low_productivity_data]
+)
+
+correlation_coefficient_high, _ = pearsonr(
+    [entry['Branch count'] for entry in high_productivity_data],
+    [entry['Collaboration ratio'] for entry in high_productivity_data]
+)
+
+correlation_coefficient_none, _ = pearsonr(
+    [entry['Branch count'] for entry in none_productivity_data],
+    [entry['Collaboration ratio'] for entry in none_productivity_data]
+)
+
+# Define colors for each 'Productivity' category
+colors = {'Low': 'blue', 'High': 'green', 'None': 'red'}
+
+# Create a scatter plot
+# plt.scatter(x, y, marker='o', s=10, label=f'Correlation = {correlation_coefficient:.2f}')
+
+
+# Create a scatter plot with colors based on 'Productivity'
+plt.figure(figsize=(8, 6))  # Adjust the figure size if needed
+for entry in data:
+    plt.scatter(
+        entry['Branch count'],
+        entry['Collaboration ratio'],
+        color=colors[entry['Productivity']],
+        s=15,  # Decrease dot size to 50 (adjust as needed)
+        label=None  # No label for individual points
+    )
+
 
 # Adding labels and title
-plt.xlabel('Collaboration Ratio')
-plt.ylabel('Branch count')
-plt.title('Correlation Ratio vs. Branch Count')
+plt.xlabel('Branch count')
+plt.ylabel('Collaboration ratio')
+plt.title('Correlation Ratio vs. Branch Count (Scatter Plot)')
+
+# Add a correlation line
+z = np.polyfit(branch_count, collaboration_ratio, 1)
+p = np.poly1d(z)
+# plt.plot(branch_count, p(branch_count), 'r--', label=f'Correlation = {correlation_coefficient:.2f}')
+
+# Create a custom legend with unique 'Productivity' labels
+legend_labels = {productivity: color for productivity, color in colors.items()}
+for label, color in legend_labels.items():
+    plt.scatter([], [], color=color, label=f"Productivity: {label}", s=50)
+
+plt.text(
+    0.02, 0.95,
+    f'Correlation for Low: {correlation_coefficient_low:.2f}',
+    transform=plt.gca().transAxes
+)
+plt.text(
+    0.02, 0.90,
+    f'Correlation for High: {correlation_coefficient_high:.2f}',
+    transform=plt.gca().transAxes
+)
+plt.text(
+    0.02, 0.85,
+    f'Correlation for None: {correlation_coefficient_none:.2f}',
+    transform=plt.gca().transAxes
+)
+
+# Move the legend to the upper-right corner
+plt.legend(loc='upper right')
+
 
 # Show the chart
 plt.grid(True)
 plt.show()
+
+""" **************************************** Corralation   **************************************************** """
+# # Extracting data for 'Branch Count' and 'Collaboration Ratio'
+# branch_count = [entry['Branch count'] for entry in dict_list_mono]
+# collaboration_ratio = [entry['Collaboration ratio'] for entry in dict_list_mono]
+#
+# # Calculate the correlation coefficient
+# correlation_coefficient, _ = pearsonr(branch_count, collaboration_ratio)
+#
+# # Print the correlation coefficient
+# print(f'Correlation Coefficient: {correlation_coefficient}')
+#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
